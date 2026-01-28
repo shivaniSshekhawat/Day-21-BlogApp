@@ -19,27 +19,31 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from the frontend/dist folder
-const frontendPath = path.join(__dirname, '../../frontend/dist');
-app.use(express.static(frontendPath));
-
 app.use('/api/auth', authRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/payments', paymentRoutes);
 
-// Catch-all route to serve the frontend's index.html
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api')) {
-    return res.status(404).json({ message: 'API Route Not Found' });
-  }
-  
-  const indexPath = path.join(frontendPath, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).send('Frontend not built. Please run "npm run build" in the frontend directory.');
-  }
-});
+// Optional: Serve static files if the frontend folder exists
+const frontendPath = path.join(__dirname, '../../frontend/dist');
+
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ message: 'API Route Not Found' });
+    }
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send('Frontend not built. Please run "npm run build" in the frontend directory.');
+    }
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('API is running...');
+  });
+}
 
 const PORT = process.env.PORT || 5000;
 
